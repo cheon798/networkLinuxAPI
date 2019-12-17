@@ -11,8 +11,7 @@ main(int argc, char const *argv[])
     int i;
     pid_t cpid;
 
-    for (i=0 ; i<3 ; i++)
-    {
+    for (i=0 ; i<3 ; i++) {
         cpid = fork();
 
         printf("[%d] PID(%d) PPID(%d)\n", i, getpid(), getppid());
