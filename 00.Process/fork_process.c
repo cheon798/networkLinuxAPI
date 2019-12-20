@@ -17,7 +17,6 @@ main(int argc, char const *argv[])
         printf("[%d] PID(%d) PPID(%d)\n", i, getpid(), getppid());
 
 #ifndef OMIT_SWITH
-
         switch (cpid) {
             case 0:         // Child Process
                 pause();
@@ -30,6 +29,7 @@ main(int argc, char const *argv[])
                 break;
         }
 #endif
+
     }
 
     wait(NULL);
