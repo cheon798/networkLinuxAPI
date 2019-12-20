@@ -4,7 +4,7 @@ INC_DIR			?=
 LIB_DIR 		?=
 
 #### Linux domain configuration
-SRCS 			?= sock_stream.c
+SRCS 			?= inet_tcp_serv1.c
 OBJS 			?= $(SRCS:%.c=%.o)
 APPS 			?= $(SRCS:%.c=%)
 
