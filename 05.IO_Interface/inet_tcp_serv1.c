@@ -88,7 +88,7 @@ main(int argc, char const *argv[])
     }
 
     if (port == 0) {                            // if user don't insert port number
-        len_saddr = sizeof(saddr_s);
+        len_saddr = sizeof(saddr_s);            // , to obtain fd_linstener's informantion(port number)
         getsockname(fd_linstener, (struct sockaddr *)&saddr_s, &len_saddr);
     }   // returns the current address to which the socket sockfd is bound, in the buffer pointed to by addr.
 
