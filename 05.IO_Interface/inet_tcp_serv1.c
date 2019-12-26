@@ -10,7 +10,7 @@
 
 #define print_msg(io, msgtype, arg...) \
         flockfile(io); \
-        fprintf(io, "["#msgtype"][%s/%s:%03d]", __FILE__, __FUNCTION__, __LINE__); \    
+        fprintf(io, "["#msgtype"][%s/%s:%03d]", __FILE__, __FUNCTION__, __LINE__); \
         fprintf(io, arg); \
         fputc('\n', io); \
         funlockfile(io);
@@ -24,28 +24,43 @@
 #define pr_out(arg...) print_msg(stdout, REP, arg)
 
 #define LISTEN_BACKLOG  20
-#define MAX_POOL        3
+#define MAX_POOL        5
 
 /*
     int atoi(const char *nptr)                      type convert : nptr --> int
     int socket(int domain, int type, int protocol)  AF_INET SOCK_STEAM  IPPROTO_IP
-    ----------------------------------------------------------------------
-    struct sockaddr_in {                struct sockaddr_in6 {
-        sa_familty_t    sin_family;         sa_family_t     sin6_family;
-        in_port_t       sin_port;           in_port_t       sin6_port;
-        struct in_addr  sin_addr;           uint32_t        sin6_flowinfo;
-            -----------------------         struct in6_addr sin6_addr;
-            struct in_addr {                    --------------------------
-                 in_addr_t  s_addr;             struct in6_addr {
-            };                                      uint8_t   s6_addr[16];
-            -----------------------             };
-        char            sin_zero[8];            --------------------------
-    };                                      uint32_t        sin6_cope_id;
-                                        };
-    ----------------------------------------------------------------------
-    uint16_t htons(uint16_t hostshort)  port type convert : host(litten) byte --> network(bic) byte
+    -----------------------------------------------------------------------
+    struct sockaddr_in {               | struct sockaddr_in6 {
+        sa_familty_t    sin_family;    |     sa_family_t     sin6_family;
+        in_port_t       sin_port;      |     in_port_t       sin6_port;
+        struct in_addr  sin_addr;      |     uint32_t        sin6_flowinfo;
+            -----------------------    |     struct in6_addr sin6_addr;
+            struct in_addr {           |         --------------------------
+                 in_addr_t  s_addr;    |         struct in6_addr {
+            };                         |             uint8_t   s6_addr[16];
+            -----------------------    |         };
+        char            sin_zero[8];   |         --------------------------
+    };                                 |     uint32_t        sin6_cope_id;
+                                       | };
+    ------------------------------------------------------------------------
+    standard sockaddr / sockaddr_storage structure
+    ------------------------------------------------------------------------
+    struct sockaddr {             | struct sockaddr_storage {
+        sa_family_t sa_family;    |     sa_family_t       ss_family;
+        char        sa_data[14];  |     char              __ss_padding[118];
+    };                            |     unsigned long int __ss_align;
+                                  | };
+    ------------------------------------------------------------------------
+    uint16_t htons(uint16_t hostshort)  port type convert 
+        : host(little endian) byte --> network(bic endian) byte
     int bind(int sockfd, const strcut sockaddr *addr, socklen_t addrlen)
     int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
+    uint16_t ntohs(uint16_t netshort)   port type convert 
+        : network(bic endian) byte --> host(little endian) byte
+    int listen(int sockfd, int backlog)
+        : backlog --> connection waiting queue, 128, 256, 512, 1024, ....
+    void exit(int status) --> same to return() in main()
+        : normal process termination, status & 0377 is return to the parent
 */
 
 int fd_linstener;                       // Socket Filedescripter
@@ -126,10 +141,30 @@ main(int argc, char const *argv[])
 void
 start_child(int sfd, int idx)
 {
-    int cfd, ret_len;
-    char buf[40];           /* small buffer */  
+    int cfd, ret_len;                   // cfd : client socket filedescripter
+    char rbuf[40];                      // small recv buffer  
     socklen_t len_saddr;
-    struct sockaddr_storage saddr_c;
+    struct sockaddr_storage saddr_c;    // new structure type include IPv4, IPv6 (RFC2553)
+    char cipv4buf[INET_ADDRSTRLEN];     // client ipv4 buffer
+    char cipv6buf[INET6_ADDRSTRLEN];    // client ipv6 buffer
+    
+    /*
+    sockaddr / sockaddr_storage structure
+    ------------------------------------------------------------------------
+    struct sockaddr {             | struct sockaddr_storage {
+        sa_family_t sa_family;    |     sa_family_t       ss_family;
+        char        sa_data[14];  |     char              __ss_padding[118];
+    };                            |     unsigned long int __ss_align;
+                                  | };
+    ------------------------------------------------------------------------
+    int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
+        : if user don't need client's sockaddr structure info, the second & third parameter are 'NULL'.
+    char *inet_ntoa(struct in_addr in)  internet host address convet
+        : network(bic endian) byte order --> string in IPv4 dotted-decimal notation.
+    uint16_t ntohs(uint16_t netshort)   port type convert 
+        : network(bic endian) byte --> host(little endian) byte
+    ssize_t recv(int sockfd, void *buffer, size_t length, int flags)
+    */
 
     for(;;) {
         len_saddr = sizeof(saddr_c);
@@ -141,34 +176,43 @@ start_child(int sfd, int idx)
         }
 
         if (saddr_c.ss_family == AF_INET) {
-            pr_out("[Child:%d] accept (ip:port) (%s:%d)", 
-            idx,
-            inet_ntoa(((struct sockaddr_in *)&saddr_c)->sin_addr),
+            if (NULL == inet_ntop(saddr_c.ss_family, (void *)&((struct sockaddr_in *)&saddr_c)->sin_addr, cipv4buf, INET_ADDRSTRLEN)) {
+                pr_err("[Child:%d] Client IPv4 address get fail : inet_ntop() : %s", idx, strerror(errno));
+                break;
+            }
+            pr_out("[Child:%d] accept (ip:port) (%s:%d)", idx, cipv4buf,   // or //inet_ntoa(((struct sockaddr_in *)&saddr_c)->sin_addr),
+            ntohs(((struct sockaddr_in *)&saddr_c)->sin_port));
+        } else if (saddr_c.ss_family == AF_INET6) {
+            if (NULL == inet_ntop(saddr_c.ss_family, (void *)&((struct sockaddr_in6 *)&saddr_c)->sin6_addr, cipv6buf, INET6_ADDRSTRLEN)) {
+                pr_err("[Child:%d] Client IPv6 address get fail : inet_ntop() : %s", idx, strerror(errno));
+                break;
+            }
+            pr_out("[Child:%d] accept (ip:port) (%s:%d)", idx, cipv6buf,
             ntohs(((struct sockaddr_in *)&saddr_c)->sin_port));
         }
-
+        
         for (;;) {
-            ret_len = recv(cfd, buf, sizeof(buf), 0);
+            ret_len = recv(cfd, rbuf, sizeof(rbuf), 0);
             if (ret_len == -1) {
                 if (errno == EINTR) continue;
-                pr_err("[Child:%d] F1ail : recv() : %s", idx, strerror(errno));
+                pr_err("[Child:%d] Fail : recv() : %s", idx, strerror(errno));
                 break;
             }
 
-            if (ret_len == 0) {
-                pr_err("[Child:%d] Session closed", idx);
+            if (ret_len == 0) {             // Active Close : client request to connection exit
+                pr_out("[Child:%d] Session closed", idx);
                 close(cfd);
                 break;
             }
 
-            pr_out("[Child:%d] RECV(%.*s)", idx, ret_len, buf);
+            pr_out("[Child:%d] RECV(%.*s)", idx, ret_len, rbuf);
 
-            if (send(cfd, buf, ret_len, 0) == -1) {
+            if (send(cfd, rbuf, ret_len, 0) == -1) {
                 pr_err("[Child:%d] Fail : send() to socket(%d)", idx, cfd);
                 close(cfd);
             }
 
-            sleep(1);
+            //sleep(1);
         }
     }  
 }
