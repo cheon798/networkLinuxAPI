@@ -24,7 +24,7 @@
 #define pr_out(arg...) print_msg(stdout, REP, arg)
 
 #define LISTEN_BACKLOG  20
-#define MAX_POOL        5
+#define MAX_POOL        8
 
 /*
     int atoi(const char *nptr)                      type convert : nptr --> int
@@ -36,7 +36,7 @@
         struct in_addr  sin_addr;      |     uint32_t        sin6_flowinfo;
             -----------------------    |     struct in6_addr sin6_addr;
             struct in_addr {           |         --------------------------
-                 in_addr_t  s_addr;    |         struct in6_addr {
+                   in_addr_t  s_addr;  |         struct in6_addr {
             };                         |             uint8_t   s6_addr[16];
             -----------------------    |         };
         char            sin_zero[8];   |         --------------------------
@@ -64,7 +64,7 @@
 */
 
 int fd_linstener;                       // Socket Filedescripter
-void start_child(int fd, int idx);      // Fucntion that call accept() for connect() in child process
+void start_child(int sfd, int idx);      // Fucntion that call accept() for connect() in child process
 
 int 
 main(int argc, char const *argv[])
@@ -127,7 +127,7 @@ main(int argc, char const *argv[])
             pr_err("[TCP server] : Fail : fork()");
             break;
 
-        default:    /* parent process */
+        default :    /* parent process */
             pr_out("[TCP server] Making child process No.%d", i);
             break;
         }
@@ -205,7 +205,7 @@ start_child(int sfd, int idx)
                 break;
             }
 
-            pr_out("[Child:%d] RECV(%.*s)", idx, ret_len, rbuf);
+            pr_out("[Child:%d] RECV(%.*s)", idx, rbuf[ret_len-1] == '\n' ? ret_len-1 : ret_len, rbuf);
 
             if (send(cfd, rbuf, ret_len, 0) == -1) {
                 pr_err("[Child:%d] Fail : send() to socket(%d)", idx, cfd);
