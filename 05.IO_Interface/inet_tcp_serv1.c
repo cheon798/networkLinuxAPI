@@ -8,7 +8,6 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <wait.h>
-
     /*
         void flockfile(FILE *filehandle)
         void funlockfile(FILE *filehandle)
@@ -131,25 +130,25 @@ main(int argc, char const *argv[])
 
             default :    /* parent process */
                 pr_out("[TCP server] Making child process No.%d", i);
-
-                wpid = wait(&wstatus);
-                if (wpid == -1) {
-                    perror("wait() \n");
-                } else {
-                    if (WIFEXITED(wstatus)) {
-                        printf("[COMPLETE END]  SIG : %d \n", WEXITSTATUS(wstatus));
-                        printf("[COMPLETE END] CPID : %d \n", wpid);
-                    } else if (WIFSIGNALED(wstatus)) {
-                        printf("[KILLED BY SIG]  SIG : %d \n", WTERMSIG(wstatus));
-                        printf("[KILLED BY SIG] CPID : %d \n", wpid);
-                    } else if (WIFSTOPPED(wstatus)) {
-                        printf("[STOPPED BY SIG]  SIG : %d \n", WTERMSIG(wstatus));
-                        printf("[STOPPED BY SIG] CPID : %d \n", wpid);
-                    } else if (WIFCONTINUED(wstatus)) {
-                        printf("[CONTINUED] CPID : %d \n", wpid);
-                    }
-                }
                 break;
+        }
+    }
+
+    wpid = wait(&wstatus);
+    if (wpid == -1) {
+        perror("wait() \n");
+    } else {
+        if (WIFEXITED(wstatus)) {
+            printf("[COMPLETE END]  SIG : %d \n", WEXITSTATUS(wstatus));
+            printf("[COMPLETE END] CPID : %d \n", wpid);
+        } else if (WIFSIGNALED(wstatus)) {
+            printf("[KILLED BY SIG]  SIG : %d \n", WTERMSIG(wstatus));
+            printf("[KILLED BY SIG] CPID : %d \n", wpid);
+        } else if (WIFSTOPPED(wstatus)) {
+            printf("[STOPPED BY SIG]  SIG : %d \n", WTERMSIG(wstatus));
+            printf("[STOPPED BY SIG] CPID : %d \n", wpid);
+        } else if (WIFCONTINUED(wstatus)) {
+            printf("[CONTINUED] CPID : %d \n", wpid);
         }
     }
 
