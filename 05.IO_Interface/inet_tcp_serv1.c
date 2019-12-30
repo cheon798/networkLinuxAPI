@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <wait.h>
 
     /*
         void flockfile(FILE *filehandle)
@@ -71,11 +72,11 @@ void start_child(int sfd, int idx);      // Fucntion that call accept() for conn
 int 
 main(int argc, char const *argv[])
 {
-    int i, rtn;
+    int i, rtn, wstatus;
     short port;                         // Server Port
     socklen_t len_saddr;                // IPv4(AF_INET) sockaddr_* structure length
     struct sockaddr_in saddr_s ={};     // IPv4(AF_INET) sockaddr_* structure
-    pid_t pid;                          // process ID for fork()
+    pid_t cpid, wpid;                          // process ID for fork()
 
     if (argc > 2) { 
         printf("%s [port number]\n", argv[0]);
@@ -118,7 +119,7 @@ main(int argc, char const *argv[])
     }
 
     for (i=0 ; i<MAX_POOL ; i++) {
-        switch (pid = fork()) {
+        switch (cpid = fork()) {
             case 0 :    /* child process*/
                 start_child(fd_linstener, i);
                 exit(EXIT_SUCCESS);
@@ -130,6 +131,24 @@ main(int argc, char const *argv[])
 
             default :    /* parent process */
                 pr_out("[TCP server] Making child process No.%d", i);
+
+                wpid = wait(&wstatus);
+                if (wpid == -1) {
+                    perror("wait() \n");
+                } else {
+                    if (WIFEXITED(wstatus)) {
+                        printf("[COMPLETE END]  SIG : %d \n", WEXITSTATUS(wstatus));
+                        printf("[COMPLETE END] CPID : %d \n", wpid);
+                    } else if (WIFSIGNALED(wstatus)) {
+                        printf("[KILLED BY SIG]  SIG : %d \n", WTERMSIG(wstatus));
+                        printf("[KILLED BY SIG] CPID : %d \n", wpid);
+                    } else if (WIFSTOPPED(wstatus)) {
+                        printf("[STOPPED BY SIG]  SIG : %d \n", WTERMSIG(wstatus));
+                        printf("[STOPPED BY SIG] CPID : %d \n", wpid);
+                    } else if (WIFCONTINUED(wstatus)) {
+                        printf("[CONTINUED] CPID : %d \n", wpid);
+                    }
+                }
                 break;
         }
     }
