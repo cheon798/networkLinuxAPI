@@ -4,7 +4,7 @@ INC_DIR			?=
 LIB_DIR 		?=
 
 #### Linux domain configuration
-SRCS 			?= inet_udp_rcver.c
+SRCS 			?= inet_tcp_serv1.c
 OBJS 			?= $(SRCS:%.c=%.o)
 APPS 			?= $(SRCS:%.c=%)
 
@@ -22,11 +22,11 @@ RM 				= rm
 all :: $(APPS)
 
 $(APPS) : $(OBJS)
-	$(CC) $(CFLAGS) -o $@ -g $< $(CPPFLAGS) $(LDFLAGS) $(LDLIBS)
+	$(CC) $(CFLAGS) -o $@ -g $< $(LDFLAGS) $(LDLIBS)
 
 clean :
 	$(RM) -f $(APPS) $(OBJS)
 
 #### Suffix Rule
 .c.o :
-	$(CC) -c -o $@ $<
+	$(CC) -c -o $@ $< 

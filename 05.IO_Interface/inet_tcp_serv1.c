@@ -8,23 +8,25 @@
 #include <arpa/inet.h>
 #include <errno.h>
 
-#define print_msg(io, msgtype, arg...) \
-        flockfile(io); \
-        fprintf(io, "["#msgtype"][%s/%s:%03d]", __FILE__, __FUNCTION__, __LINE__); \
-        fprintf(io, arg); \
-        fputc('\n', io); \
-        funlockfile(io);
     /*
         void flockfile(FILE *filehandle)
         void funlockfile(FILE *filehandle)
         int fprintf(FILE *stream, const char *format, ...)
         int fputc(int c, FILE *stream)
     */
+
+#define print_msg(io, msgtype, arg...) \
+        flockfile(io); \
+        fprintf(io, "["#msgtype"][%s/%s:%03d]", __FILE__, __FUNCTION__, __LINE__); \
+        fprintf(io, arg); \
+        fputc('\n', io); \
+        funlockfile(io);
+
 #define pr_err(arg...) print_msg(stderr, ERR, arg)
 #define pr_out(arg...) print_msg(stdout, REP, arg)
 
 #define LISTEN_BACKLOG  20
-#define MAX_POOL        8
+#define MAX_POOL        16
 
 /*
     int atoi(const char *nptr)                      type convert : nptr --> int
@@ -94,7 +96,7 @@ main(int argc, char const *argv[])
 
     saddr_s.sin_family = AF_INET;               // IPv4 Domain
     saddr_s.sin_addr.s_addr = INADDR_ANY;       // Multi NIC 동시 지원, 이식성
-    saddr_s.sin_port = htons(port);             // port type convert : little endian -> big endian
+    saddr_s.sin_port = htons(port);             // port type convert : little(host) endian -> big(network) endian
 
     rtn = bind(fd_linstener, (struct sockaddr *)&saddr_s, sizeof(saddr_s));
     if (rtn == -1) {
@@ -116,20 +118,19 @@ main(int argc, char const *argv[])
     }
 
     for (i=0 ; i<MAX_POOL ; i++) {
-        switch (pid = fork())
-        {
-        case 0 :    /* child process*/
-            start_child(fd_linstener, i);
-            exit(EXIT_SUCCESS);
-            break;
-            
-        case -1 :   /* error case */
-            pr_err("[TCP server] : Fail : fork()");
-            break;
+        switch (pid = fork()) {
+            case 0 :    /* child process*/
+                start_child(fd_linstener, i);
+                exit(EXIT_SUCCESS);
+                break;
+                
+            case -1 :   /* error case */
+                pr_err("[TCP server] : Fail : fork()");
+                break;
 
-        default :    /* parent process */
-            pr_out("[TCP server] Making child process No.%d", i);
-            break;
+            default :    /* parent process */
+                pr_out("[TCP server] Making child process No.%d", i);
+                break;
         }
     }
 
