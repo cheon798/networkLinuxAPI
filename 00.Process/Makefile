@@ -4,7 +4,7 @@ INC_DIR			?=
 LIB_DIR 		?=
 
 #### Linux domain configuration
-SRCS 			?= fork_process.c
+SRCS 			?= forkexec_child.c
 OBJS 			?= $(SRCS:%.c=%.o)
 APPS 			?= $(SRCS:%.c=%)
 
@@ -29,4 +29,4 @@ clean :
 
 #### Suffix Rule
 .c.o :
-	$(CC) $(CFLAGS) -c -o $@ $< ##-DOMIT_SWITH
+	$(CC) $(CFLAGS) -c -o $@ $<

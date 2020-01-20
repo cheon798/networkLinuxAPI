@@ -132,6 +132,24 @@ main(int argc, char const *argv[])
                 pr_out("[TCP server] Making child process No.%d", i);
                 break;
         }
+
+        // wpid = wait(&wstatus);
+        // if (wpid == -1) {
+        //     perror("wait() \n");
+        // } else {
+        //     if (WIFEXITED(wstatus)) {
+        //         printf("[COMPLETE END]  SIG : %d \n", WEXITSTATUS(wstatus));
+        //         printf("[COMPLETE END] CPID : %d \n", wpid);
+        //     } else if (WIFSIGNALED(wstatus)) {
+        //         printf("[KILLED BY SIG]  SIG : %d \n", WTERMSIG(wstatus));
+        //         printf("[KILLED BY SIG] CPID : %d \n", wpid);
+        //     } else if (WIFSTOPPED(wstatus)) {
+        //         printf("[STOPPED BY SIG]  SIG : %d \n", WTERMSIG(wstatus));
+        //         printf("[STOPPED BY SIG] CPID : %d \n", wpid);
+        //     } else if (WIFCONTINUED(wstatus)) {
+        //         printf("[CONTINUED] CPID : %d \n", wpid);
+        //     }
+        // }
     }
 
     wpid = wait(&wstatus);
