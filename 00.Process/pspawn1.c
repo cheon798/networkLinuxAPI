@@ -41,9 +41,8 @@ main(int argc, char const *argv[])
     //             const posix_spawn_file_actions_t *file_actions,  &posix_faction,
     //             const posix_spawnattr_t *restrict attrp,         NULL,
     //             char *const argv[restrict],                      argv_exec,
-    //             char *const envp[restrict]                       NULL
-    //             )                                                )
-
+    //             char *const envp[restrict])                      NULL)
+    
     rtn = posix_spawn_file_actions_destroy(&posix_faction);
      if (rtn != 0) {
         strerror_r(rtn, buf_err, sizeof(buf_err));
